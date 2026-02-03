@@ -1,0 +1,3 @@
+name: zenml
+runtime: python
+description: Pulumi program to deploy zenml orchestrator on Kubernetes

@@ -1,0 +1,3 @@
+encryptionsalt: v1:0hPp739eJKA=:v1:oWqVN2QInkE7+cch:IGiBvKCMG1dLL9mHO6fI2x7/NOcLWQ==
+config:
+  minio:namespace: zenml
