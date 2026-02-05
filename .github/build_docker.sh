@@ -1,0 +1,179 @@
+name: Docker Build
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: "Folder to build (optional - overrides change detection)"
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "pbd/pipelines/**"
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  detect-changes:
+    runs-on: pbd-runner-scale-set
+    outputs:
+      changed_folders: ${{ steps.filter.outputs.folders }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Changed Folders
+        id: filter
+        run: |
+          if [ -n "${{ github.event.inputs.folder }}" ]; then
+            CHANGED='["${{ github.event.inputs.folder }}"]'
+          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
+            CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
+          else
+            FOLDERS=$(git diff --name-only origin/main...HEAD | grep '^pbd/pipelines/' | cut -d '/' -f3 | sort -u)
+            EXISTING=()
+            for folder in $FOLDERS; do
+              if [ -d "pbd/pipelines/$folder" ]; then
+                EXISTING+=("\"$folder\"")
+              fi
+            done
+            CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
+          fi
+          echo "folders=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Detected folders for build: $CHANGED"
+
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
+    runs-on: pbd-runner-scale-set
+    strategy:
+      matrix:
+        folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Repository Details
+        id: repo-details
+        run: |
+          LOWERCASE_REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          LOWERCASE_REPO_OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')
+          echo "repo_name=$LOWERCASE_REPO_NAME" >> $GITHUB_OUTPUT
+          echo "repo_owner=$LOWERCASE_REPO_OWNER" >> $GITHUB_OUTPUT
+          echo "🏷️ Repository: $LOWERCASE_REPO_OWNER/$LOWERCASE_REPO_NAME"
+          echo "📁 Building folder: ${{ matrix.folder }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ steps.repo-details.outputs.repo_owner }}/pbd-${{ matrix.folder }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.folder }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Enhanced logging and debugging
+          outputs: type=registry,compression=gzip,force-compression=true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Enable detailed build logs
+          build-args: |
+            BUILDKIT_PROGRESS=plain
+          provenance: false
+          sbom: false
+
+      - name: Image digest and size info
+        run: |
+          echo "🏗️ Build completed for: ${{ matrix.folder }}"
+          echo "🔗 Image: ghcr.io/${{ steps.repo-details.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest"
+          echo "📊 Image digest: ${{ steps.build.outputs.digest }}"
+
+          # Get image size info
+          docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep "pbd-${{ matrix.folder }}" || true
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.folder }}
+          path: |
+            /tmp/docker-buildx-*
+            ~/.docker/
+          retention-days: 7
+
+  notify-slack:
+    needs: [detect-changes, build-and-push]
+    if: always()
+    runs-on: dharma-runner-scale-set
+    steps:
+      - name: Prepare notification details
+        id: notification
+        run: |
+          # Determine status emoji and message
+          if [[ "${{ needs.build-and-push.result }}" == "success" ]]; then
+            STATUS_EMOJI="🟢"
+            STATUS_TEXT="SUCCESS"
+          elif [[ "${{ needs.build-and-push.result }}" == "failure" ]]; then
+            STATUS_EMOJI="🔴"
+            STATUS_TEXT="FAILED"
+          elif [[ "${{ needs.build-and-push.result }}" == "cancelled" ]]; then
+            STATUS_EMOJI="🟡"
+            STATUS_TEXT="CANCELLED"
+          else
+            STATUS_EMOJI="⚪"
+            STATUS_TEXT="SKIPPED"
+          fi
+
+          echo "status_emoji=$STATUS_EMOJI" >> $GITHUB_OUTPUT
+          echo "status_text=$STATUS_TEXT" >> $GITHUB_OUTPUT
+
+          # Get timing info
+          echo "workflow_duration=$(($(date +%s) - $(date -d "${{ github.event.head_commit.timestamp }}" +%s)))s" >> $GITHUB_OUTPUT
+
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C09115D7Z2T'
+          slack-message: |
+            ${{ steps.notification.outputs.status_emoji }} *CI/CD Pipeline: ${{ steps.notification.outputs.status_text }}*
+
+            📁 *Folders:* ${{ needs.detect-changes.outputs.changed_folders }}
+            🔧 *Trigger:* ${{ github.event_name }}
+            👤 *Actor:* ${{ github.actor }}
+            🌿 *Branch:* ${{ github.ref_name }}
+            ⏱️ *Duration:* ${{ steps.notification.outputs.workflow_duration }}
+            🔗 *Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
+
+            ${{ needs.build-and-push.result == 'failure' && '⚠️ Check logs for detailed error information' || '✅ All images built and pushed successfully' }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

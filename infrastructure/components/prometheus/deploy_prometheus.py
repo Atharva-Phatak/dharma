@@ -40,22 +40,9 @@ def deploy_prometheus(
                         "enabled": True,
                         "storageClass": "standard",
                     },
-                    "remoteWrite": [
-                        {
-                            "url": "https://prometheus-prod-43-prod-ap-south-1.grafana.net/api/prom/push",
-                            "basic_auth": {
-                                "username": grafana_username,
-                                "password": grafana_password,
-                            },
-                        }
-                    ],
                 },
                 "alertmanager": {"enabled": True},
                 "pushgateway": {"enabled": False},
-                "scrapeConfigs": {
-                    "job_name": "node",
-                    "static_configs": [{"targets": ["localhost:9090"]}],
-                },
             },
         ),
         opts=pulumi.ResourceOptions(

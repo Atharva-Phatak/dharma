@@ -5,24 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
- "pre-commit>=4.2.0",
- "typer>=0.21.0",
- "rich",
- "metaflow==2.15.21",
- "pulumi>=3.181.0",
- "pulumi-kubernetes>=4.23.0",
- "pulumi-command>=1.1.0",
- "python-dotenv>=1.1.1",
- "infisicalsdk>=1.0.9",
- "pulumi-minio>=0.16.4",
- "omegaconf>=2.3.0",
- "ruff>=0.12.5",
- "copier>=9.8.0",
  "zenml==0.93.1",
- "slack>=0.0.2",
- "s3fs>=2025.10.0",
- "slack-sdk>=3.38.0",
  "kubernetes>=34.1.0",
+
 ]
 
 [project.scripts]
@@ -37,9 +22,28 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
+data-collection = [
+    "minio>=7.2.20",
+]
 lint = [
+    "pre-commit>=4.5.1",
     "ruff>=0.14.14",
 ]
+infrastructure = [
+    "typer>=0.21.0",
+    "rich",
+    "pulumi>=3.181.0",
+    "pulumi-kubernetes>=4.23.0",
+    "pulumi-command>=1.1.0",
+    "python-dotenv>=1.1.1",
+    "infisicalsdk>=1.0.9",
+    "pulumi-minio>=0.16.4",
+    "omegaconf>=2.3.0",
+    "slack>=0.0.2",
+    "s3fs>=2025.10.0",
+    "slack-sdk>=3.38.0",
+
+ ]
 
 [tool.setuptools.packages.find]
 where = ["."]

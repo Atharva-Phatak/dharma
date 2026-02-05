@@ -81,17 +81,17 @@ def deploy_sequentially():
     )
 
     # Deploy monitoring components
-    # prometheus_stack = deploy_stack(
-    #    name="13_prometheus", path=Path(infra_base_path) / "13_prometheus"
-    # )
+    prometheus_stack = deploy_stack(
+        name="13_prometheus", path=Path(infra_base_path) / "13_prometheus"
+    )
 
-    # prometheus_stack_outputs = prometheus_stack.outputs()
-    # monitoring_namespace = prometheus_stack_outputs["monitoring_namespace"].value
-    # _ = deploy_stack(
-    #    name="14_grafana",
-    #    path=Path(infra_base_path) / "14_grafana",
-    #    config={"monitoring_namespace": monitoring_namespace},
-    # )
+    prometheus_stack_outputs = prometheus_stack.outputs()
+    monitoring_namespace = prometheus_stack_outputs["monitoring_namespace"].value
+    _ = deploy_stack(
+        name="14_grafana",
+        path=Path(infra_base_path) / "14_grafana",
+        config={"monitoring_namespace": monitoring_namespace},
+    )
     deploy_stack(
         name="16_additional_secrets",
         path=Path(infra_base_path) / "16_additional_secrets",
