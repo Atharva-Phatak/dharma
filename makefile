@@ -1,4 +1,4 @@
-PYTHON ?= python3.11
+PYTHON ?= python3.13
 
 VENV_BASE  = .venv-base
 VENV_INFRA = .venv-infra

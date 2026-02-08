@@ -1,10 +1,6 @@
-FROM pytorch/pytorch:2.9.0-cuda12.6-cudnn9-devel
-
+FROM ghcr.io/astral-sh/uv:latest
 # Set workdir
 WORKDIR /app
-
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy pyproject.toml
 COPY pyproject.toml /app/

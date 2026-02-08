@@ -25,31 +25,6 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def ocr_single_image(img_base64: str, client: OpenAI) -> str:
-    """Process a single image with OCR."""
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{img_base64}"},
-                    },
-                    {
-                        "type": "text",
-                        "text": "Extract the text from the above document as if you were reading it naturally. Page numbers should be wrapped in brackets. Ex: <page_number>14</page_number> or <page_number>9/22</page_number>. Prefer using ☐ and ☑ for check boxes.",
-                    },
-                ],
-            }
-        ],
-        temperature=0.0,
-        max_tokens=15000,
-    )
-    return response.choices[0].message.content
-
-
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -189,5 +164,4 @@ def ocr_batch(
     logger.info(f"Successful requests: {successful_requests}/{total_requests}")
     logger.info(f"Average time per request: {total_time / total_requests:.2f}s")
     logger.info(f"Average time per image: {total_time / len(image_paths):.2f}s")
-
     return results

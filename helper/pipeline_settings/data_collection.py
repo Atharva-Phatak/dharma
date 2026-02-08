@@ -4,18 +4,9 @@ from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "4", "memory": "10Gi", "nvidia.com/gpu": "1"},
-        "limits": {"cpu": "6", "memory": "18Gi", "nvidia.com/gpu": "1"},
+        "requests": {"cpu": "4", "memory": "2Gi"},
+        "limits": {"cpu": "6", "memory": "3Gi"},
     },
-    volumes=[
-        {"name": "model-volume", "persistentVolumeClaim": {"claimName": "model-pvc"}}
-    ],
-    volume_mounts=[
-        {
-            "name": "model-volume",
-            "mountPath": "/models",
-        }
-    ],
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
     labels={"app": "ocr_pipelines", "component": "step"},
 )

@@ -90,10 +90,6 @@ def ocr_images(
     endpoint: str,
     bucket: str,
     book_name: str,
-    model_name: str,
-    max_new_tokens: int,
-    prompt: str,
-    batch_size: int = 5,
 ) -> Dataset:
     """
     ZenML step that downloads a zip of images from MinIO, extracts them, runs OCR inference,
@@ -129,11 +125,9 @@ def ocr_images(
     )
     image_paths = sort_pages_by_number(image_paths)
     logger.info(f"Extracted {len(image_paths)} images from {local_image_path}")
-
     outputs = ocr_batch(
         image_paths=image_paths,
     )
-
     # Convert list[dict] → Hugging Face Dataset
     dataset = Dataset.from_list(outputs)
     return dataset
