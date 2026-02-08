@@ -6,10 +6,7 @@ from infrastructure.helper.config import load_config
 provider = get_k8s_provider()
 cfg = load_config()
 
-keda_namespace = create_namespace(
-    provider=provider,
-    namespace = "keda"
-)
+keda_namespace = create_namespace(provider=provider, namespace="keda")
 _ = deploy_keda(
     provider=provider,
     namespace=keda_namespace.metadata["name"],

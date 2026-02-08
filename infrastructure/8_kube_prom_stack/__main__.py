@@ -1,6 +1,5 @@
 from infrastructure.helper.namespace import create_namespace
 from infrastructure.helper.provider import get_k8s_provider
-import pulumi
 from infrastructure.components.kube_prom_stack.deploy_kp import deploy_kp_stack
 from infrastructure.helper.config import load_config
 

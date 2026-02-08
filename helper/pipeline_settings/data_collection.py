@@ -17,8 +17,7 @@ step_pod_settings = KubernetesPodSettings(
         }
     ],
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "ocr_pipelines",
-            "component": "step"},
+    labels={"app": "ocr_pipelines", "component": "step"},
 )
 
 orchestrator_pod_settings = KubernetesPodSettings(
@@ -27,8 +26,7 @@ orchestrator_pod_settings = KubernetesPodSettings(
         "limits": {"cpu": "4", "memory": "256Mi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "zenml-orchestrator",
-            "component": "orchestrator"},
+    labels={"app": "zenml-orchestrator", "component": "orchestrator"},
 )
 
 

@@ -34,19 +34,15 @@ Functions:
 """
 
 import re
-from dataclasses import asdict
 from pathlib import Path
-
-import torch
 from datasets import Dataset
-from PIL import Image
 
 from zenml import step
 from helper.logger import setup_logger
 from helper.minio import download_from_minio
 from helper.minio_paths import get_books_path
 from pdf2image import convert_from_path
-import time
+from data_collection.ocr import ocr_batch
 
 logger = setup_logger(__name__)
 
@@ -89,13 +85,7 @@ def sort_pages_by_number(pages: list[str]) -> list[str]:
     return sorted(pages, key=extract_number)
 
 
-
-
-
-
-
-@step(enable_step_logs=True, enable_cache=False,
-      name="extract_content")
+@step(enable_step_logs=True, enable_cache=False, name="extract_content")
 def ocr_images(
     endpoint: str,
     bucket: str,
@@ -140,18 +130,10 @@ def ocr_images(
     image_paths = sort_pages_by_number(image_paths)
     logger.info(f"Extracted {len(image_paths)} images from {local_image_path}")
 
-    # check if cuda is available
-    logger.info(f"CUDA available: {torch.cuda.is_available()}")
-
-    model_path = f"models/{model_name}"
-
-    outputs = do_inference(
+    outputs = ocr_batch(
         image_paths=image_paths,
-        model_path=model_path,
-        max_new_tokens=max_new_tokens,
-        batch_size=batch_size,
-        prompt=prompt,
     )
+
     # Convert list[dict] → Hugging Face Dataset
     dataset = Dataset.from_list(outputs)
     return dataset

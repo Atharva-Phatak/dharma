@@ -7,14 +7,17 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type,
     before_sleep_log,
-    after_log
+    after_log,
 )
+import logging
 from openai import OpenAI
+
 logger = setup_logger(__name__)
 
 # Configuration matching your vLLM setup
 IMAGES_PER_REQUEST = 5  # matches limit_mm_per_prompt
 model = "nanonets/Nanonets-OCR2-3B"
+
 
 def encode_image(image_path: str) -> str:
     """Encode a single image to base64."""
@@ -22,8 +25,7 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def ocr_single_image(img_base64: str,
-                     client) -> str:
+def ocr_single_image(img_base64: str, client: OpenAI) -> str:
     """Process a single image with OCR."""
     response = client.chat.completions.create(
         model=model,
@@ -43,7 +45,7 @@ def ocr_single_image(img_base64: str,
             }
         ],
         temperature=0.0,
-        max_tokens=15000
+        max_tokens=15000,
     )
     return response.choices[0].message.content
 
@@ -53,10 +55,9 @@ def ocr_single_image(img_base64: str,
     wait=wait_exponential(multiplier=1, min=2, max=10),
     retry=retry_if_exception_type((Exception,)),
     before_sleep=before_sleep_log(logger, logging.WARNING),
-    after=after_log(logger, logging.INFO)
+    after=after_log(logger, logging.INFO),
 )
-def ocr_multiple_images(image_base64_list: list[str],
-                        client) -> str:
+def ocr_multiple_images(image_base64_list: list[str], client: OpenAI) -> str:
     """
     Process multiple images (up to 5) in a single request.
 
@@ -67,23 +68,29 @@ def ocr_multiple_images(image_base64_list: list[str],
         Single OCR result containing text from all images
     """
     if len(image_base64_list) > IMAGES_PER_REQUEST:
-        raise ValueError(f"Cannot process more than {IMAGES_PER_REQUEST} images per request")
+        raise ValueError(
+            f"Cannot process more than {IMAGES_PER_REQUEST} images per request"
+        )
 
     # Build content with multiple images
     content = []
 
     # Add all images
     for img_base64 in image_base64_list:
-        content.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/png;base64,{img_base64}"},
-        })
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{img_base64}"},
+            }
+        )
 
     # Add single instruction for all images
-    content.append({
-        "type": "text",
-        "text": "Extract the text from the above document as if you were reading it naturally. Page numbers should be wrapped in brackets. Ex: <page_number>14</page_number> or <page_number>9/22</page_number>. Prefer using ☐ and ☑ for check boxes.",
-    })
+    content.append(
+        {
+            "type": "text",
+            "text": "Extract the text from the above document as if you were reading it naturally. Page numbers should be wrapped in brackets. Ex: <page_number>14</page_number> or <page_number>9/22</page_number>. Prefer using ☐ and ☑ for check boxes.",
+        }
+    )
 
     response = client.chat.completions.create(
         model=model,
@@ -94,16 +101,16 @@ def ocr_multiple_images(image_base64_list: list[str],
             }
         ],
         temperature=0.0,
-        max_tokens=15000
+        max_tokens=15000,
     )
 
     return response.choices[0].message.content
 
 
 def ocr_batch(
-        image_paths: list[str],
-        images_per_request: int = IMAGES_PER_REQUEST,
-        show_progress: bool = True
+    image_paths: list[str],
+    images_per_request: int = IMAGES_PER_REQUEST,
+    show_progress: bool = True,
 ) -> list[dict]:
     """
     Process a batch of images sequentially.
@@ -119,7 +126,7 @@ def ocr_batch(
     """
     # Split images into chunks
     image_chunks = [
-        image_paths[i:i + images_per_request]
+        image_paths[i : i + images_per_request]
         for i in range(0, len(image_paths), images_per_request)
     ]
 
@@ -139,13 +146,15 @@ def ocr_batch(
             # Send request with multiple images
             ocr_result = ocr_multiple_images(encoded_images)
 
-            results.append({
-                "image_paths": chunk_paths,
-                "ocr_result": ocr_result,
-                "status": "success",
-                "error": None,
-                "num_images": len(chunk_paths)
-            })
+            results.append(
+                {
+                    "image_paths": chunk_paths,
+                    "ocr_result": ocr_result,
+                    "status": "success",
+                    "error": None,
+                    "num_images": len(chunk_paths),
+                }
+            )
 
             chunk_time = time.time() - chunk_start
 
@@ -153,22 +162,28 @@ def ocr_batch(
                 elapsed = time.time() - start_time
                 avg_time = elapsed / request_num
                 remaining = (total_requests - request_num) * avg_time
-                logger.info(f"✓ Request {request_num}/{total_requests} ({len(chunk_paths)} images) "
-                      f"completed in {chunk_time:.2f}s | Est. remaining: {remaining:.1f}s")
+                logger.info(
+                    f"✓ Request {request_num}/{total_requests} ({len(chunk_paths)} images) "
+                    f"completed in {chunk_time:.2f}s | Est. remaining: {remaining:.1f}s"
+                )
 
         except Exception as e:
             logger.info(f"✗ Request {request_num}/{total_requests} FAILED: {e}")
-            results.append({
-                "image_paths": chunk_paths,
-                "ocr_result": None,
-                "status": "failed",
-                "error": str(e),
-                "num_images": len(chunk_paths)
-            })
+            results.append(
+                {
+                    "image_paths": chunk_paths,
+                    "ocr_result": None,
+                    "status": "failed",
+                    "error": str(e),
+                    "num_images": len(chunk_paths),
+                }
+            )
 
     total_time = time.time() - start_time
-    successful_requests = sum(1 for r in results if r['status'] == 'success')
-    successful_images = sum(r['num_images'] for r in results if r['status'] == 'success')
+    successful_requests = sum(1 for r in results if r["status"] == "success")
+    # successful_images = sum(
+    #    r["num_images"] for r in results if r["status"] == "success"
+    # )
 
     logger.info(f"Total processing time: {total_time:.2f}s")
     logger.info(f"Successful requests: {successful_requests}/{total_requests}")

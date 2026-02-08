@@ -8,9 +8,8 @@ from zenml.client import Client
 
 logger = setup_logger(__name__)
 
-@step(name="store_extracted_texts_to_minio",
-      enable_step_logs=True,
-      enable_cache=False)
+
+@step(name="store_extracted_texts_to_minio", enable_step_logs=True, enable_cache=False)
 def store_extracted_texts_to_minio(
     dataset: Dataset,
     bucket_name: str,

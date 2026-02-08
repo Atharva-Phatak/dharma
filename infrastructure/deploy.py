@@ -29,11 +29,13 @@ def deploy_stack(name, path, config=None):
     stack.up(on_output=log_only_errors)
     return stack
 
+
 def refresh_stack(name, path):
     stack = auto.create_or_select_stack(stack_name=name, work_dir=path)
     print(f"Refreshing stack: {name}")
     stack.refresh(on_output=log_only_errors)
     return stack
+
 
 def destroy_stack(name, path):
     stack = auto.create_or_select_stack(stack_name=name, work_dir=path)
@@ -85,10 +87,10 @@ def deploy_sequentially():
         config={"namespace": zenml_namespace_name},
     )
 
-    #deploy kube-prometheus-stack
+    # deploy kube-prometheus-stack
     _ = deploy_stack(
         name="kube_prom_stack",
-        path = Path(infra_base_path) / "8_kube_prom_stack",
+        path=Path(infra_base_path) / "8_kube_prom_stack",
     )
 
     deploy_stack(
@@ -104,11 +106,11 @@ def deploy_sequentially():
     )
     print("✅ Observability stack deployed.")
     deploy_stack(
-        name = "vllm",
-        path = Path(infra_base_path) / "15_vllm",
-        config = {
+        name="vllm",
+        path=Path(infra_base_path) / "15_vllm",
+        config={
             "namespace": zenml_namespace_name,
-        }
+        },
     )
     print("✅ VLLM deployed.")
 
@@ -126,33 +128,33 @@ def deploy_sequentially():
 def refresh_sequentially():
     infra_base_path = get_base_path()
     _ = refresh_stack(
-            name="7_arc_runner",
-            path=Path(infra_base_path) / "7_arc_runner",
+        name="7_arc_runner",
+        path=Path(infra_base_path) / "7_arc_runner",
     )
     # Deploy minio
     _ = refresh_stack(
-            name="4_minio",
-            path=Path(infra_base_path) / "4_minio",
+        name="4_minio",
+        path=Path(infra_base_path) / "4_minio",
     )
     # Deploy postgres
     _ = refresh_stack(
-            name="5_sql",
-            path=Path(infra_base_path) / "5_sql",
+        name="5_sql",
+        path=Path(infra_base_path) / "5_sql",
     )
     # Deploy orchestrator
     _ = refresh_stack(
-            name="6_orchestrator",
-            path=Path(infra_base_path) / "6_orchestrator",
-        )  # Deploy persistent volume claims
+        name="6_orchestrator",
+        path=Path(infra_base_path) / "6_orchestrator",
+    )  # Deploy persistent volume claims
     _ = refresh_stack(
-            name="12_persistent_claims",
-            path=Path(infra_base_path) / "12_persistent_claims",
-        )
+        name="12_persistent_claims",
+        path=Path(infra_base_path) / "12_persistent_claims",
+    )
 
     _ = refresh_stack(
-            name="8_kube_prom_stack",
-            path=Path(infra_base_path) / "8_kube_prom_stack",
-        )
+        name="8_kube_prom_stack",
+        path=Path(infra_base_path) / "8_kube_prom_stack",
+    )
 
     refresh_stack(
         name="15_vllm",
@@ -160,14 +162,11 @@ def refresh_sequentially():
     )
 
     refresh_stack(
-            name="16_additional_secrets",
-            path=Path(infra_base_path) / "16_additional_secrets",
-        )
-
-def destroy_singular_stack(stack_name:str):
-    infra_base_path = get_base_path()
-    destroy_stack(
-        name=stack_name,
-        path=Path(infra_base_path) / stack_name
+        name="16_additional_secrets",
+        path=Path(infra_base_path) / "16_additional_secrets",
     )
 
+
+def destroy_singular_stack(stack_name: str):
+    infra_base_path = get_base_path()
+    destroy_stack(name=stack_name, path=Path(infra_base_path) / stack_name)

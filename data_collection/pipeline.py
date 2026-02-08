@@ -9,6 +9,7 @@ import argparse
 from data_collection.extract_data import ocr_images
 from data_collection.upload import store_extracted_texts_to_minio
 from helper.constants import DefaultConstants
+
 logger = setup_logger(__name__)
 
 
@@ -48,7 +49,7 @@ def ocr_pipeline(
         model_name=model_name,
         prompt=prompt,
         max_new_tokens=max_new_tokens,
-        batch_size = batch_size
+        batch_size=batch_size,
     )
     logger.info(f"OCR results stored in MinIO bucket '{bucket}'.")
     store_extracted_texts_to_minio(
@@ -61,13 +62,14 @@ def ocr_pipeline(
         f"OCR results stored in MinIO bucket '{bucket}' with filename '{book_name}'."
     )
 
+
 if __name__ == "__main__":
     parser = parse_args()
     ocr_pipeline(
         endpoint=parser.endpoint,
         bucket=parser.bucket,
         book_name=parser.book_name,
-        max_new_tokens = parser.max_new_tokens,
-        prompt = parser.prompt,
-        batch_size = parser.batch_size,
+        max_new_tokens=parser.max_new_tokens,
+        prompt=parser.prompt,
+        batch_size=parser.batch_size,
     )

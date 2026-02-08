@@ -1,7 +1,6 @@
 from infrastructure.components.vllm.deploy_vllm import deploy_vllm
 from infrastructure.helper.provider import get_k8s_provider
 from infrastructure.helper.config import load_config
-from infrastructure.helper.namespace import create_namespace
 import pulumi
 
 cfg = load_config()

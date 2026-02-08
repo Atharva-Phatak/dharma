@@ -3,11 +3,12 @@ from pulumi_kubernetes.helm.v3 import Chart, ChartOpts, FetchOpts
 import pulumi_kubernetes as k8s
 from infrastructure.helper.secrets import generate_grafana_credentials
 
+
 def deploy_kp_stack(
-        depends_on: list,
-        provider: k8s.Provider,
-        namespace: str,
-        project_id: str,
+    depends_on: list,
+    provider: k8s.Provider,
+    namespace: str,
+    project_id: str,
 ) -> Chart:
     grafana_username, grafana_password = generate_grafana_credentials(
         project_id=project_id, environment_slug="dev"
@@ -48,11 +49,7 @@ def deploy_kp_stack(
                         "pathType": "Prefix",
                     },
                 },
-                "alertmanager": {
-                    "alertmanagerSpec": {
-                        "replicas": 1
-                    }
-                },
+                "alertmanager": {"alertmanagerSpec": {"replicas": 1}},
                 "prometheus": {
                     "prometheusSpec": {
                         "replicas": 1,
@@ -67,7 +64,7 @@ def deploy_kp_stack(
                                 "spec": {
                                     "storageClassName": "standard",
                                     "accessModes": ["ReadWriteOnce"],
-                                    "resources": {"requests": {"storage": "10Gi"}}
+                                    "resources": {"requests": {"storage": "10Gi"}},
                                 }
                             }
                         },
@@ -78,32 +75,31 @@ def deploy_kp_stack(
                             "selector": {
                                 "matchLabels": {
                                     "environment": "dev",
-                                    "service": "ocr_engine"  # ← Changed from "ocr" to "ocr_engine"
+                                    "service": "ocr_engine",  # ← Changed from "ocr" to "ocr_engine"
                                 }
                             },
                             "namespaceSelector": {"matchNames": ["zenml"]},
-                            "endpoints": [{"port": "service-port", "path": "/metrics"}]
+                            "endpoints": [{"port": "service-port", "path": "/metrics"}],
                         },
                         {
                             "name": "vllm-router-monitor",
                             "selector": {
                                 "matchLabels": {
                                     "environment": "dev",
-                                    "release": "router"
+                                    "release": "router",
                                 }
                             },
                             "namespaceSelector": {"matchNames": ["zenml"]},
-                            "endpoints": [{"port": "router-sport", "path": "/metrics"}]
-                        }
-                    ]
+                            "endpoints": [{"port": "router-sport", "path": "/metrics"}],
+                        },
+                    ],
                 },
-
                 # --- PROMETHEUS ADAPTER FOR CUSTOM METRICS (HPA) ---
                 "prometheus-adapter": {
                     "enabled": True,
                     "prometheus": {
                         "url": f"http://prometheus-stack-kube-prom-prometheus.{namespace}.svc",
-                        "port": 9090
+                        "port": 9090,
                     },
                     "logLevel": 1,
                     "rules": {
@@ -119,9 +115,9 @@ def deploy_kp_stack(
                                 },
                                 "name": {
                                     "matches": "",
-                                    "as": "vllm_num_requests_waiting"
+                                    "as": "vllm_num_requests_waiting",
                                 },
-                                "metricsQuery": "sum by(namespace) (vllm:num_requests_waiting)"
+                                "metricsQuery": "sum by(namespace) (vllm:num_requests_waiting)",
                             },
                             # vLLM num_incoming_requests_total by model name
                             {
@@ -133,38 +129,40 @@ def deploy_kp_stack(
                                 },
                                 "name": {
                                     "matches": "",
-                                    "as": "vllm_num_incoming_requests_total"
+                                    "as": "vllm_num_incoming_requests_total",
                                 },
-                                "metricsQuery": "sum by(namespace, model) (vllm:num_incoming_requests_total)"
-                            }
-                        ]
-                    }
+                                "metricsQuery": "sum by(namespace, model) (vllm:num_incoming_requests_total)",
+                            },
+                        ],
+                    },
                 },
-
                 # --- K8S METRICS & CLEANUP ---
                 "nodeExporter": {"enabled": True},
                 "kubeStateMetrics": {"enabled": True},
                 "kubeScheduler": {"enabled": False},
                 "kubeEtcd": {"enabled": False},
                 "kubeControllerManager": {"enabled": False},
-
                 "additionalPrometheusRulesMap": {
                     "vllm-rules": {
-                        "groups": [{
-                            "name": "vllm-alerts",
-                            "rules": [{
-                                "alert": "vLLMHighQueueSize",
-                                "expr": "vllm:num_requests_waiting > 10",
-                                "for": "2m",
-                                "labels": {"severity": "warning"},
-                                "annotations": {
-                                    "summary": "vLLM queue is backing up",
-                                    "description": "Namespace {{ $labels.namespace }} has {{ $value }} requests waiting."
-                                }
-                            }]
-                        }]
+                        "groups": [
+                            {
+                                "name": "vllm-alerts",
+                                "rules": [
+                                    {
+                                        "alert": "vLLMHighQueueSize",
+                                        "expr": "vllm:num_requests_waiting > 10",
+                                        "for": "2m",
+                                        "labels": {"severity": "warning"},
+                                        "annotations": {
+                                            "summary": "vLLM queue is backing up",
+                                            "description": "Namespace {{ $labels.namespace }} has {{ $value }} requests waiting.",
+                                        },
+                                    }
+                                ],
+                            }
+                        ]
                     }
-                }
+                },
             },
         ),
         opts=pulumi.ResourceOptions(

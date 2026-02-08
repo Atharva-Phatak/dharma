@@ -1,6 +1,10 @@
 import typer
 from rich.console import Console
-from infrastructure.deploy import deploy_sequentially, refresh_sequentially, destroy_singular_stack
+from infrastructure.deploy import (
+    deploy_sequentially,
+    refresh_sequentially,
+    destroy_singular_stack,
+)
 import os
 from dotenv import load_dotenv
 

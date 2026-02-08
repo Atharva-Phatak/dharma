@@ -3,9 +3,7 @@
 Usage: python build.py <pipeline_name> [tag]
 """
 
-import os
 import subprocess
-import sys
 from datetime import datetime
 from pathlib import Path
 from time import time
@@ -22,11 +20,11 @@ class DockerBuilder:
     """Build Docker images for PBD pipelines with timing."""
 
     def __init__(
-            self,
-            pipeline_name: str,
-            tag: str = "latest",
-            username: str = "atharva-phatak",
-            no_cache: bool = True,
+        self,
+        pipeline_name: str,
+        tag: str = "latest",
+        username: str = "atharva-phatak",
+        no_cache: bool = True,
     ):
         self.pipeline_name = pipeline_name
         self.tag = tag
@@ -35,9 +33,7 @@ class DockerBuilder:
 
         # Set up paths
         self.root_dir = Path(__file__).parent.parent.resolve()
-        self.dockerfile_path = (
-                self.root_dir / pipeline_name / "Dockerfile"
-        )
+        self.dockerfile_path = self.root_dir / pipeline_name / "Dockerfile"
         self.image_name = f"ghcr.io/{username}/{pipeline_name}:{tag}"
 
         # Timing
@@ -79,7 +75,7 @@ class DockerBuilder:
                 f"[red]Error: Dockerfile not found at '{self.dockerfile_path}'[/red]"
             )
             console.print("Available pipelines:")
-            pipelines_dir = self.root_dir  / "pipelines"
+            pipelines_dir = self.root_dir / "pipelines"
 
             if pipelines_dir.exists():
                 pipelines = [
@@ -103,10 +99,13 @@ class DockerBuilder:
         console.print("🔨 Building Docker image...")
 
         build_cmd = [
-            "docker", "build",
-            "-f", f"{self.pipeline_name}/Dockerfile",
-            "-t", self.image_name,
-            "."
+            "docker",
+            "build",
+            "-f",
+            f"{self.pipeline_name}/Dockerfile",
+            "-t",
+            self.image_name,
+            ".",
         ]
 
         if self.no_cache:
@@ -129,7 +128,9 @@ class DockerBuilder:
             console.print(
                 f"[red]❌ Error: Docker build failed with exit code: {e.returncode}[/red]"
             )
-            console.print(f"⏱️  Build duration: {self.format_duration(self.build_duration)}")
+            console.print(
+                f"⏱️  Build duration: {self.format_duration(self.build_duration)}"
+            )
             return False
 
     def _print_summary(self, success: bool):
@@ -142,8 +143,12 @@ class DockerBuilder:
         console.print("")
         console.print("📊 TIMING SUMMARY")
         console.print("=" * 40)
-        console.print(f"⏱️  Validation time: {self.format_duration(self.validation_duration)}")
-        console.print(f"🔨 Build time:      {self.format_duration(self.build_duration)}")
+        console.print(
+            f"⏱️  Validation time: {self.format_duration(self.validation_duration)}"
+        )
+        console.print(
+            f"🔨 Build time:      {self.format_duration(self.build_duration)}"
+        )
         console.print(f"📈 Total time:      {self.format_duration(total_duration)}")
         console.print(f"🕐 Completed at:    {datetime.now()}")
         console.print("")
@@ -170,9 +175,6 @@ class DockerBuilder:
         # Print summary
         self._print_summary(success=True)
         return True
-
-
-
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ def infra_action(
     ),
     stack_name: str = typer.Option(
         "...", "--stack_name", help="Name of the infrastructure stack to destroy"
-    )
+    ),
 ):
     """⚙️ Deploy or manage infrastructure stacks"""
     console.print(
@@ -162,14 +162,15 @@ def register_zenml_stack(
         console.print(f"[red]Error registering ZenML stack: {e}[/red]")
         raise typer.Exit(1)
 
+
 @app.command()
 def docker_build(
-        pipeline_name: str = typer.Argument(..., help="Name of the pipeline to build"),
-        tag: str = typer.Option("latest", "--tag", "-t", help="Docker image tag"),
-        username: str = typer.Option(
-            "atharva-phatak", "--username", "-u", help="Docker username"
-        ),
-        cache: bool = typer.Option(True, "--cache/--no-cache", help="Use Docker cache"),
+    pipeline_name: str = typer.Argument(..., help="Name of the pipeline to build"),
+    tag: str = typer.Option("latest", "--tag", "-t", help="Docker image tag"),
+    username: str = typer.Option(
+        "atharva-phatak", "--username", "-u", help="Docker username"
+    ),
+    cache: bool = typer.Option(True, "--cache/--no-cache", help="Use Docker cache"),
 ):
     """
     Build Docker images for PBD pipelines.
@@ -190,6 +191,7 @@ def docker_build(
 
     if not success:
         raise typer.Exit(code=1)
+
 
 if __name__ == "__main__":
     app()

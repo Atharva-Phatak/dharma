@@ -22,7 +22,7 @@ def deploy_persistent_volume_claims(
             labels={
                 "type": "manual-storage",
                 "pv-name": pv_name,
-                "used_for" : "vllm"# Unique identifier
+                "used_for": "vllm",  # Unique identifier
             },
         ),
         spec=k8s.core.v1.PersistentVolumeSpecArgs(
@@ -42,9 +42,9 @@ def deploy_persistent_volume_claims(
         metadata=k8s.meta.v1.ObjectMetaArgs(
             name=pvc_name,
             namespace=namespace,
-            labels = {
-                "used_for" : "vllm",
-            }
+            labels={
+                "used_for": "vllm",
+            },
         ),
         spec=k8s.core.v1.PersistentVolumeClaimSpecArgs(
             selector=k8s.meta.v1.LabelSelectorArgs(
