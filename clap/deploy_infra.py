@@ -1,6 +1,6 @@
 import typer
 from rich.console import Console
-from infrastructure.deploy import deploy_sequentially
+from infrastructure.deploy import deploy_sequentially, refresh_sequentially, destroy_singular_stack
 import os
 from dotenv import load_dotenv
 
@@ -30,6 +30,25 @@ class InfraDeployer:
 
         if self.operation == "create" and self.group == "default":
             deploy_sequentially()
+        else:
+            raise ValueError(
+                f"Unsupported operation '{self.operation}' for group '{self.group}'."
+            )
+
+    def refresh(self):
+        console.print(f"Refreshing {self.group}")
+
+        if self.operation == "refresh" and self.group == "default":
+            refresh_sequentially()
+        else:
+            raise ValueError(
+                f"Unsupported operation '{self.operation}' for group '{self.group}'."
+            )
+
+    def destroy(self, stack_name: str):
+        console.print(f"Deleting {stack_name}")
+        if self.operation == "destroy":
+            destroy_singular_stack(stack_name)
         else:
             raise ValueError(
                 f"Unsupported operation '{self.operation}' for group '{self.group}'."

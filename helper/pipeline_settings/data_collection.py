@@ -8,7 +8,7 @@ step_pod_settings = KubernetesPodSettings(
         "limits": {"cpu": "6", "memory": "18Gi", "nvidia.com/gpu": "1"},
     },
     volumes=[
-        {"name": "model-volume", "persistentVolumeClaim": {"claimName": "mk-model-pvc"}}
+        {"name": "model-volume", "persistentVolumeClaim": {"claimName": "model-pvc"}}
     ],
     volume_mounts=[
         {
@@ -17,7 +17,8 @@ step_pod_settings = KubernetesPodSettings(
         }
     ],
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "ocr_pipelines", "component": "step"},
+    labels={"app": "ocr_pipelines",
+            "component": "step"},
 )
 
 orchestrator_pod_settings = KubernetesPodSettings(
@@ -26,7 +27,8 @@ orchestrator_pod_settings = KubernetesPodSettings(
         "limits": {"cpu": "4", "memory": "256Mi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "zenml-orchestrator", "component": "orchestrator"},
+    labels={"app": "zenml-orchestrator",
+            "component": "orchestrator"},
 )
 
 
@@ -36,5 +38,5 @@ k8s_operator_settings = KubernetesOrchestratorSettings(
     pod_startup_timeout=1200,  # 20 minutes
 )
 docker_settings = DockerSettings(
-    parent_image="ghcr.io/atharva-phatak/pbd-ocr_engine:latest", skip_build=True
+    parent_image="ghcr.io/atharva-phatak/data_collection:latest", skip_build=True
 )

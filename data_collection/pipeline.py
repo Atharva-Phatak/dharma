@@ -67,4 +67,7 @@ if __name__ == "__main__":
         endpoint=parser.endpoint,
         bucket=parser.bucket,
         book_name=parser.book_name,
+        max_new_tokens = parser.max_new_tokens,
+        prompt = parser.prompt,
+        batch_size = parser.batch_size,
     )

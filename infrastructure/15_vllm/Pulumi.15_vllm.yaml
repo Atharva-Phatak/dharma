@@ -1,0 +1,3 @@
+encryptionsalt: v1:nMIsycAkfQk=:v1:KYnOPmoJXH022yDa:Hm2mU6jD9gv/Ddf/k9x2kgCuikPBkw==
+config:
+  vllm_deployer:namespace: zenml

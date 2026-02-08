@@ -13,6 +13,7 @@ from clap.deploy_infra import InfraDeployer
 from clap.trigger_gh_actions import GitHubWorkflowTrigger
 from clap.dependency import DependencyUpdater
 from clap.register_zenml_stack import ZenMLSetup
+from clap.docker_build import DockerBuilder
 
 app = typer.Typer(
     name="clap",
@@ -32,6 +33,9 @@ def infra_action(
     operation: str = typer.Option(
         "...", "--operation", help="Operation to perform (create/destroy/refresh)"
     ),
+    stack_name: str = typer.Option(
+        "...", "--stack_name", help="Name of the infrastructure stack to destroy"
+    )
 ):
     """⚙️ Deploy or manage infrastructure stacks"""
     console.print(
@@ -47,7 +51,7 @@ def infra_action(
         case "create":
             deployer.deploy()
         case "destroy":
-            deployer.destroy()
+            deployer.destroy(stack_name=stack_name)
         case "refresh":
             deployer.refresh()
         case _:
@@ -158,6 +162,34 @@ def register_zenml_stack(
         console.print(f"[red]Error registering ZenML stack: {e}[/red]")
         raise typer.Exit(1)
 
+@app.command()
+def docker_build(
+        pipeline_name: str = typer.Argument(..., help="Name of the pipeline to build"),
+        tag: str = typer.Option("latest", "--tag", "-t", help="Docker image tag"),
+        username: str = typer.Option(
+            "atharva-phatak", "--username", "-u", help="Docker username"
+        ),
+        cache: bool = typer.Option(True, "--cache/--no-cache", help="Use Docker cache"),
+):
+    """
+    Build Docker images for PBD pipelines.
+
+    Examples:
+        python build.py ocr_engine
+        python build.py training_pipeline --tag v1.0.0
+        python build.py data_collection --no-cache
+    """
+    builder = DockerBuilder(
+        pipeline_name=pipeline_name,
+        tag=tag,
+        username=username,
+        no_cache=not cache,
+    )
+
+    success = builder.build()
+
+    if not success:
+        raise typer.Exit(code=1)
 
 if __name__ == "__main__":
     app()

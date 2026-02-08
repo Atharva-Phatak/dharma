@@ -2,6 +2,7 @@ from infrastructure.components.cluster.minikube import start_minikube
 from infrastructure.helper.config import load_config
 from infrastructure.helper.provider import get_k8s_provider
 from infrastructure.helper.namespace import create_namespace
+from infrastructure.components.runtime_classes.nvidia import deploy_nvidia_runtime_class
 import pulumi
 
 # Load configuration
@@ -17,6 +18,11 @@ minikube_start = start_minikube(
     models_mount_path=cfg.model_storage_path,
 )
 provider = get_k8s_provider(depends_on=[minikube_start])
+
+run_time_class = deploy_nvidia_runtime_class(
+    provider=provider,
+    depends_on=[minikube_start],
+)
 zenml_namespace = create_namespace(
     namespace="zenml",
     provider=provider,
