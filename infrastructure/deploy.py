@@ -47,7 +47,7 @@ def deploy_sequentially():
 
     # Deploy cluster/namespace first
     cluster_stack = deploy_stack(
-        name="1_cluster",
+        name="cluster",
         path=Path(infra_base_path) / "1_cluster",
     )
     outputs = cluster_stack.outputs()  # ✅ this is a dictionary
@@ -55,71 +55,56 @@ def deploy_sequentially():
     print(f"✅ Cluster and namespace deployed: {zenml_namespace_name}")
     # Deploy arc runner
     _ = deploy_stack(
-        name="7_arc_runner",
+        name="arc_runner",
         path=Path(infra_base_path) / "7_arc_runner",
     )
     # Deploy minio
     _ = deploy_stack(
-        name="4_minio",
+        name="minio",
         path=Path(infra_base_path) / "4_minio",
         config={"namespace": zenml_namespace_name},
     )
     # Deploy postgres
     _ = deploy_stack(
-        name="5_sql",
+        name="sql",
         path=Path(infra_base_path) / "5_sql",
         config={"namespace": zenml_namespace_name},
     )
     print("✅ MinIO and SQL deployed.")
     # Deploy orchestrator
     _ = deploy_stack(
-        name="6_orchestrator",
+        name="orchestrator",
         path=Path(infra_base_path) / "6_orchestrator",
         config={"namespace": zenml_namespace_name},
     )
     print("✅ Orchestrator deployed.")
     # Deploy persistent volume claims
     _ = deploy_stack(
-        name="12_persistent_claims",
+        name="persistent_claims",
         path=Path(infra_base_path) / "12_persistent_claims",
         config={"namespace": zenml_namespace_name},
     )
 
-    # Deploy monitoring components
-    #prometheus_stack = deploy_stack(
-    #    name="13_prometheus", path=Path(infra_base_path) / "13_prometheus"
-    #)
-
-    #prometheus_stack_outputs = prometheus_stack.outputs()
-    #monitoring_namespace = prometheus_stack_outputs["monitoring_namespace"].value
-    #_ = deploy_stack(
-    #    name="14_grafana",
-    #    path=Path(infra_base_path) / "14_grafana",
-    #    config={"monitoring_namespace": monitoring_namespace},
-    #)
-
     #deploy kube-prometheus-stack
     _ = deploy_stack(
-        name="8_kube_prom_stack",
+        name="kube_prom_stack",
         path = Path(infra_base_path) / "8_kube_prom_stack",
     )
 
     deploy_stack(
-        name="16_additional_secrets",
-        path=Path(infra_base_path) / "16_additional_secrets",
-        config={"namespace": zenml_namespace_name},
-    )
-    print("✅ Observability stack deployed.")
-
-
-    deploy_stack(
-        name = "9_keda",
-        path = Path(infra_base_path) / "9_keda",
+        name="keda",
+        path=Path(infra_base_path) / "9_keda",
     )
     print("✅ KEDA deployed.")
 
     deploy_stack(
-        name = "15_vllm",
+        name="additional_secrets",
+        path=Path(infra_base_path) / "16_additional_secrets",
+        config={"namespace": zenml_namespace_name},
+    )
+    print("✅ Observability stack deployed.")
+    deploy_stack(
+        name = "vllm",
         path = Path(infra_base_path) / "15_vllm",
         config = {
             "namespace": zenml_namespace_name,

@@ -20,7 +20,7 @@ def deploy_vllm(provider: k8s.Provider,
         "vllm-stack",
         ChartOpts(
             chart="vllm-stack",
-            version="0.1.3",  # Check latest
+            version="0.1.9",  # Check latest
             fetch_opts=FetchOpts(
                 repo="https://vllm-project.github.io/production-stack",
             ),
@@ -65,7 +65,8 @@ def deploy_vllm(provider: k8s.Provider,
                         "keda": {
                                 "enabled": True,
                                 "minReplicaCount": 0,  # Allow scaling to zero
-                                "maxReplicaCount": 5,
+                                "maxReplicaCount": 1,
+                                "idleReplicaCount": 0,
                                 "triggers": [
                                     # Queue-based scaling
                                     {
@@ -151,7 +152,8 @@ def deploy_vllm(provider: k8s.Provider,
             opts=pulumi.ResourceOptions(
             provider=provider,
             custom_timeouts=pulumi.CustomTimeouts(create="10m"),
-            replace_on_changes=["spec"]
+            replace_on_changes=["spec"],
+            depends_on=[service_account]
         ),
     )
     pulumi.export("vllm_helm_chart", vllm_chart.ready)
