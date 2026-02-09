@@ -15,13 +15,8 @@ logger = setup_logger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run OCR ZenML pipeline")
-    parser.add_argument("--endpoint", type=str, required=True)
     parser.add_argument("--bucket", type=str, required=True)
     parser.add_argument("--book_name", type=str, required=True)
-    parser.add_argument("--model_name", type=str, required=True)
-    parser.add_argument("--max_new_tokens", type=int, default=512)
-    parser.add_argument("--batch_size", type=int, default=5)
-    parser.add_argument("--prompt", type=str, default="Extract all text from the image")
     return parser.parse_args()
 
 
@@ -58,10 +53,6 @@ def ocr_pipeline(
 if __name__ == "__main__":
     parser = parse_args()
     ocr_pipeline(
-        endpoint=parser.endpoint,
         bucket=parser.bucket,
         book_name=parser.book_name,
-        max_new_tokens=parser.max_new_tokens,
-        prompt=parser.prompt,
-        batch_size=parser.batch_size,
     )

@@ -14,7 +14,7 @@ WORKDIR /app
 COPY pyproject.toml .
 
 # Export and install deps
-RUN uv export --only-group data-collection --no-hashes > requirements.txt
+RUN uv export --group data-collection --no-hashes > requirements.txt
 RUN uv pip install --system -r requirements.txt
 
 # Copy source code

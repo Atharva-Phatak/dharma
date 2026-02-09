@@ -85,7 +85,7 @@ def sort_pages_by_number(pages: list[str]) -> list[str]:
     return sorted(pages, key=extract_number)
 
 
-@step(enable_step_logs=True, enable_cache=False, name="extract_content")
+@step(enable_step_logs=True, enable_cache=False, name="ocr_images")
 def ocr_images(
     endpoint: str,
     bucket: str,
