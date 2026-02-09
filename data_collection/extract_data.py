@@ -98,13 +98,7 @@ def ocr_images(
     Args:
         endpoint (str): MinIO endpoint URL.
         bucket (str): MinIO bucket name.
-        object_key (str): Object key for the zip file in MinIO.
-        local_path (str): Local path to save the downloaded zip file.
-        model_path (str): Path to the pretrained multimodal LLM model.
-        extract_to (str): Directory to extract images to.
-        max_new_tokens (int): Maximum number of tokens to generate per output.
-        batch_size (int, optional): Number of images to process per batch. Defaults to 5.
-        prompt (str): The prompt to use for the OCR model.
+        book_name (str) : Name of the book.
 
     Returns:
         Dataset: Hugging Face Dataset containing OCR results for each image.

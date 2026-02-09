@@ -90,7 +90,7 @@ jobs:
 
   notify-slack:
     needs: [detect-changes, build]
-    if: always()
+    if: ${{ needs.detect-changes.outputs.folders != '[]' }}
     runs-on: dharma-runner-scale-set
     steps:
       - name: Send Slack Notification

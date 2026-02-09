@@ -35,10 +35,6 @@ def parse_args():
 def ocr_pipeline(
     bucket: str,
     book_name: str,
-    model_name: str,
-    max_new_tokens: int,
-    prompt: str,
-    batch_size: int,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
     logger.info("Starting OCR pipeline")
@@ -46,10 +42,6 @@ def ocr_pipeline(
         endpoint=DefaultConstants.minio_endpoint.value,
         bucket=bucket,
         book_name=book_name,
-        model_name=model_name,
-        prompt=prompt,
-        max_new_tokens=max_new_tokens,
-        batch_size=batch_size,
     )
     logger.info(f"OCR results stored in MinIO bucket '{bucket}'.")
     store_extracted_texts_to_minio(

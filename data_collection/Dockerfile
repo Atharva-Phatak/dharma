@@ -1,5 +1,5 @@
 # Use a real OS + Python
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Install curl (needed to install uv)
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
