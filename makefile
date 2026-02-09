@@ -4,6 +4,7 @@ VENV_BASE  = .venv-base
 VENV_INFRA = .venv-infra
 VENV_DATA  = .venv-data
 VENV_ALL   = .venv-all
+VENV_LINT = .venv-lint
 
 .PHONY: activate-base activate-infra activate-data activate-all clean
 
@@ -44,6 +45,9 @@ activate-infra:
 
 activate-data:
 	$(call ACTIVATE_ENV,$(VENV_DATA),--group data-collection)
+
+activate-lint:
+	$(call ACTIVATE_ENV,$(VENV_LINT),--group lint)
 
 activate-all:
 	$(call ACTIVATE_ENV,$(VENV_ALL),--group infrastructure --group data-collection)

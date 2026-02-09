@@ -23,6 +23,7 @@ parts/
 sdist/
 var/
 .venv/
+.venv-*
 wheels/
 share/python-wheels/
 *.egg-info/
