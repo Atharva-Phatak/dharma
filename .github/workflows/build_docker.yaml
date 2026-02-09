@@ -81,7 +81,6 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.folder }}
           file: ${{ matrix.folder }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
