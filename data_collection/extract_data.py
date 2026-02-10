@@ -58,6 +58,7 @@ def load_pdf_and_extract_images(pdf_path: str, extract_to: str) -> list[str]:
     Returns:
         list[str]: List of file paths to the extracted images.
     """
+    Path(extract_to).mkdir(parents=True, exist_ok=True)
     pages = convert_from_path(pdf_path, dpi=300)
     image_paths = []
     for i, page in enumerate(pages):
