@@ -4,8 +4,8 @@ from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "4", "memory": "2Gi"},
-        "limits": {"cpu": "6", "memory": "3Gi"},
+        "requests": {"cpu": "4", "memory": "6Gi"},
+        "limits": {"cpu": "6", "memory": "8Gi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
     labels={"app": "ocr_pipelines", "component": "step"},
@@ -24,6 +24,7 @@ orchestrator_pod_settings = KubernetesPodSettings(
 k8s_operator_settings = KubernetesOrchestratorSettings(
     pod_settings=step_pod_settings,
     orchestrator_pod_settings=orchestrator_pod_settings,
+    ttl_seconds_after_finished=180,
     pod_startup_timeout=1200,  # 20 minutes
 )
 docker_settings = DockerSettings(
