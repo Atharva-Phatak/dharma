@@ -7,9 +7,36 @@ import clap.pydantic_models as pm
 import sys
 from zenml.client import Client
 from zenml.enums import StackComponentType
+from infisical_sdk import InfisicalSDKClient
 
 app = typer.Typer()
 console = Console()
+
+
+def get_infiscal_sdk() -> InfisicalSDKClient:
+    # Initialize the client
+    client = InfisicalSDKClient(host="https://app.infisical.com")
+    client_id = os.getenv("INFISICAL_CLIENT_ID")
+    client_secret = os.getenv("INFISICAL_SECRET")
+    # Authenticate (example using Universal Auth)
+    client.auth.universal_auth.login(
+        client_id=client_id,
+        client_secret=client_secret,
+    )
+
+    return client
+
+
+def get_secret(access_key_identifier: str, project_id: str, environment_slug: str):
+    """Retrieve the Postgres password from the secret manager."""
+    client = get_infiscal_sdk()
+    _secret = client.secrets.get_secret_by_name(
+        secret_name=access_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_path="/",
+    )
+    return _secret.secretValue
 
 
 class ZenMLSetup:
@@ -103,6 +130,34 @@ class ZenMLSetup:
 
         self.client.create_secret(name="slack_secret", values={"pa_token": slack_token})
 
+    def register_minio_secret(self) -> None:
+        """Register Minio secret if it doesn't exist."""
+        console.print("🔐 Checking minio secret...")
+        if self.check_component_exists("secret", "minio_secret"):
+            console.print("✅ Minio secret already exists. Skipping...")
+            return
+
+        console.print("🔐 Registering Minio secret...")
+        project_id = os.getenv("INFISCAL_PROJECT_ID")
+        access_key_id = get_secret(
+            access_key_identifier="MINIO_ACCESS_KEY".lower(),
+            environment_slug="dev",
+            project_id=project_id,
+        )
+        access_key_secret = get_secret(
+            access_key_identifier="MINIO_SECRET_KEY".lower(),
+            environment_slug="dev",
+            project_id=project_id,
+        )
+
+        self.client.create_secret(
+            name="minio_secret",
+            values={
+                "aws_access_key_id": access_key_id,
+                "aws_secret_access_key": access_key_secret,
+            },
+        )
+
     def register_artifact_store(self) -> None:
         """Register Minio artifact store if it doesn't exist."""
         console.print("🪣 Checking Minio artifact store...")
@@ -117,11 +172,15 @@ class ZenMLSetup:
             return
 
         console.print("🪣 Registering Minio artifact store...")
+        configuration = {
+            **config.configuration.model_dump(),
+            "authentication_secret": "minio_secret",
+        }
         self.client.create_stack_component(
             name=config.name,
             flavor=config.flavor,
             component_type=StackComponentType.ARTIFACT_STORE.value,
-            configuration=config.configuration.model_dump(),
+            configuration=configuration,
         )
 
     def register_orchestrator(self) -> None:
@@ -297,6 +356,7 @@ class ZenMLSetup:
             # Register secrets
             self.register_github_secret()
             self.register_slack_secret()
+            self.register_minio_secret()  # Add this
 
             # Register stack components
             self.register_artifact_store()
@@ -304,6 +364,10 @@ class ZenMLSetup:
             self.register_container_registry()
             # self.register_code_repository()
             self.register_slack_alerter()
+
+            # Register service connector and connect to artifact store
+            # self.register_service_connector()  # Add this
+            # self.connect_artifact_store_to_connector()  # Add this
 
             # Register and activate stack
             self.register_stack()
@@ -313,6 +377,15 @@ class ZenMLSetup:
             )
             self.display_active_stack()
 
+            # Display logging info
+            console.print("\n📝 Logging Configuration:", style="bold cyan")
+            console.print("  ✅ Logs are stored in MinIO (s3://zenml-bucket)")
+            console.print("  ✅ Logs accessible via ZenML dashboard (if deployed)")
+            console.print("  ✅ Logs stream to console during pipeline runs")
+
         except Exception as e:
             console.print(f"\n❌ Error during setup: {e}", style="bold red")
+            import traceback
+
+            traceback.print_exc()
             sys.exit(1)
