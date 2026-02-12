@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Folders to exclude from Docker builds
+EXCLUDED_FOLDERS=("configs" "clap" "infrastructure" "scripts" ".github")
+
 # Get manual override from first argument (optional)
 MANUAL_FOLDER="$1"
 
@@ -23,16 +26,53 @@ else
   # Also get committed changes from main branch
   COMMITTED_FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
 
-  # Combine both and find Dockerfile folders
+  # Combine both and find folders (not just Dockerfile changes)
   FOLDERS=$(echo -e "$CHANGED_FILES\n$COMMITTED_FILES" \
-    | grep -E '(Dockerfile|/)' \
+    | grep -v '^$' \
     | xargs -r dirname \
     | grep -v '^\.$' \
     | sort -u)
 fi
 
+# Filter out excluded folders AND verify Dockerfile exists
+FILTERED_FOLDERS=""
+for folder in $FOLDERS; do
+  # Extract the base folder name (first part of path)
+  BASE_FOLDER=$(echo "$folder" | cut -d'/' -f1)
+
+  # Check if it's in the excluded list
+  EXCLUDED=false
+  for excluded in "${EXCLUDED_FOLDERS[@]}"; do
+    if [ "$BASE_FOLDER" = "$excluded" ]; then
+      EXCLUDED=true
+      echo "Filtering out excluded folder: $folder"
+      break
+    fi
+  done
+
+  # Skip if excluded
+  if [ "$EXCLUDED" = true ]; then
+    continue
+  fi
+
+  # Check if Dockerfile exists in this folder
+  if [ -f "$BASE_FOLDER/Dockerfile" ]; then
+    echo "✓ Found Dockerfile in: $BASE_FOLDER"
+    FILTERED_FOLDERS="$FILTERED_FOLDERS$BASE_FOLDER"$'\n'
+  else
+    echo "✗ No Dockerfile in: $BASE_FOLDER (skipping)"
+  fi
+done
+
+# Remove trailing newline, deduplicate, and use filtered folders
+FOLDERS=$(echo -n "$FILTERED_FOLDERS" | grep -v '^$' | sort -u || echo "")
+
 # Convert to JSON array
-JSON=$(printf '%s\n' $FOLDERS | jq -R . | jq -s .)
+if [ -z "$FOLDERS" ]; then
+  JSON="[]"
+else
+  JSON=$(printf '%s\n' $FOLDERS | jq -R . | jq -s .)
+fi
 
 # Output results
 if [ -n "$GITHUB_OUTPUT" ]; then
@@ -44,6 +84,10 @@ echo "Detected folders: $JSON"
 # For local testing, also print as newline-separated list
 if [ -z "$GITHUB_OUTPUT" ]; then
   echo ""
-  echo "Folders to build:"
-  echo "$FOLDERS"
+  if [ -n "$FOLDERS" ]; then
+    echo "Folders to build:"
+    echo "$FOLDERS"
+  else
+    echo "No folders to build (all filtered or no Dockerfiles found)"
+  fi
 fi

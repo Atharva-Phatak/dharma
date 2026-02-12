@@ -26,26 +26,8 @@ jobs:
 
       - id: detect
         run: |
-          # Manual override
-          if [ -n "${{ github.event.inputs.folder }}" ]; then
-            echo "folders=[\"${{ github.event.inputs.folder }}\"]" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # First commit → build all folders with Dockerfile
-          if [ $(git rev-list --count HEAD) -eq 1 ]; then
-            FOLDERS=$(find . -maxdepth 2 -name Dockerfile -exec dirname {} \; | sed 's|^\./||')
-          else
-            # Detect changed Dockerfile folders
-            FOLDERS=$(git diff --name-only origin/main...HEAD \
-              | grep Dockerfile \
-              | xargs -r dirname \
-              | sort -u)
-          fi
-
-          JSON=$(printf '%s\n' $FOLDERS | jq -R . | jq -s .)
-          echo "folders=$JSON" >> $GITHUB_OUTPUT
-          echo "Detected: $JSON"
+          chmod +x ./scripts/detect-changes.sh
+          ./scripts/detect-changes.sh "${{ github.event.inputs.folder }}"
 
   build:
     needs: detect-changes
