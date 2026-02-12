@@ -105,7 +105,7 @@ def wait_for_model_ready(
     Returns:
         True if model is ready, False if timeout
     """
-    models_endpoint = f"{base_url}/v1/models"
+    models_endpoint = f"{base_url}/models"
     start_time = time.time()
 
     logger.info(f"Waiting for model '{model_name}' to be ready...")
@@ -223,6 +223,8 @@ def ocr_batch(
         )
         if not is_vllm_ready_for_batching:
             raise ValueError(f"Model '{model_name}' is not ready yet. ")
+    else:
+        raise ValueError(f"Model {model_name} is not ready yet. ")
 
     for request_num, chunk_paths in enumerate(image_chunks, 1):
         chunk_start = time.time()
