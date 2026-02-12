@@ -16,7 +16,6 @@ logger = setup_logger(__name__)
 
 # Configuration matching your vLLM setup
 IMAGES_PER_REQUEST = 5  # matches limit_mm_per_prompt
-model = "nanonets/Nanonets-OCR2-3B"
 
 
 def encode_image(image_path: str) -> str:
@@ -32,12 +31,15 @@ def encode_image(image_path: str) -> str:
     before_sleep=before_sleep_log(logger, logging.WARNING),
     after=after_log(logger, logging.INFO),
 )
-def ocr_multiple_images(image_base64_list: list[str], client: OpenAI) -> str:
+def ocr_multiple_images(
+    image_base64_list: list[str], model_name: str, client: OpenAI
+) -> str:
     """
     Process multiple images (up to 5) in a single request.
 
     Args:
         image_base64_list: List of base64-encoded images (max 5)
+
 
     Returns:
         Single OCR result containing text from all images
@@ -68,7 +70,7 @@ def ocr_multiple_images(image_base64_list: list[str], client: OpenAI) -> str:
     )
 
     response = client.chat.completions.create(
-        model=model,
+        model=model_name,
         messages=[
             {
                 "role": "user",
@@ -107,9 +109,13 @@ def ocr_batch(
 
     total_requests = len(image_chunks)
     logger.info(f"Processing {len(image_paths)} images in {total_requests} requests")
-
     results = []
     start_time = time.time()
+
+    client: OpenAI = OpenAI(
+        base_url="http://vllm-stack-router-service.zenml.svc.cluster.local/v1",
+        api_key="dummy",
+    )
 
     for request_num, chunk_paths in enumerate(image_chunks, 1):
         chunk_start = time.time()
@@ -119,7 +125,9 @@ def ocr_batch(
             encoded_images = [encode_image(path) for path in chunk_paths]
 
             # Send request with multiple images
-            ocr_result = ocr_multiple_images(encoded_images)
+            ocr_result = ocr_multiple_images(
+                encoded_images, model_name="nanonets-ocr2-3b", client=client
+            )
 
             results.append(
                 {
