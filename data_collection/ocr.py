@@ -18,7 +18,7 @@ logger = setup_logger(__name__)
 
 # Configuration matching your vLLM setup
 IMAGES_PER_REQUEST = 5  # matches limit_mm_per_prompt
-MAX_WARMUP_WAIT = 300
+MAX_WARMUP_WAIT = 600
 
 
 def encode_image(image_path: str) -> str:
@@ -87,8 +87,27 @@ def ocr_multiple_images(
     return response.choices[0].message.content
 
 
+def check_first_batch(image_batch: list, model_name: str, client: OpenAI):
+    """Method to check if vllm is ready for processing batches.
+    Args:
+        image_batch: List of image file paths
+    """
+    encoded_images = [encode_image(image_batch[0])]
+    # encoded_images = [encode_image(path) for path in image_batch]
+
+    # Send request with multiple images
+    ocr_result = ocr_multiple_images(
+        encoded_images, model_name=model_name, client=client
+    )
+    if len(ocr_result) > 0:
+        return True
+    else:
+        return False
+
+
 def wait_for_model_ready(
-    base_url: str,
+    client: OpenAI,
+    image_batch: list,
     model_name: str,
     max_wait: int = MAX_WARMUP_WAIT,
     check_interval: int = 5,
@@ -97,7 +116,6 @@ def wait_for_model_ready(
     Wait for the vLLM model to be ready after cold start.
 
     Args:
-        base_url: vLLM base URL
         model_name: Expected model name/ID
         max_wait: Maximum time to wait in seconds
         check_interval: Time between checks in seconds
@@ -105,40 +123,19 @@ def wait_for_model_ready(
     Returns:
         True if model is ready, False if timeout
     """
-    models_endpoint = f"{base_url}/models"
     start_time = time.time()
 
     logger.info(f"Waiting for model '{model_name}' to be ready...")
-    logger.info(f"Checking endpoint: {models_endpoint}")
 
     while (time.time() - start_time) < max_wait:
         try:
-            response = requests.get(models_endpoint, timeout=10)
-
-            if response.status_code == 200:
-                data = response.json()
-
-                # Check if our model is in the list
-                if "data" in data:
-                    available_models = [m["id"] for m in data.get("data", [])]
-
-                    if model_name in available_models:
-                        elapsed = time.time() - start_time
-                        logger.info(
-                            f"✓ Model '{model_name}' is ready! (took {elapsed:.1f}s)"
-                        )
-                        return True
-                    else:
-                        logger.info(
-                            f"Model not yet available. Found: {available_models}"
-                        )
-                else:
-                    logger.warning(f"Unexpected response format: {data}")
-            else:
-                logger.info(
-                    f"Service not ready (HTTP {response.status_code}). "
-                    f"Pod may still be spinning up..."
-                )
+            is_up = check_first_batch(
+                image_batch=image_batch,
+                model_name=model_name,
+                client=client,
+            )
+            if not is_up:
+                logger.warning(f"{model_name} is not up yet")
 
         except requests.exceptions.RequestException as e:
             logger.info(f"Connection failed: {e}. Waiting for pod to start...")
@@ -157,23 +154,6 @@ def wait_for_model_ready(
         f"Pod may have failed to start."
     )
     return False
-
-
-def check_first_batch(image_batch: list, model_name: str, client: OpenAI):
-    """Method to check if vllm is ready for processing batches.
-    Args:
-        image_batch: List of image file paths
-    """
-    encoded_images = [encode_image(path) for path in image_batch]
-
-    # Send request with multiple images
-    ocr_result = ocr_multiple_images(
-        encoded_images, model_name=model_name, client=client
-    )
-    if len(ocr_result) > 0:
-        return True
-    else:
-        return False
 
 
 def ocr_batch(
@@ -212,7 +192,7 @@ def ocr_batch(
     )
 
     is_vllm_alive = wait_for_model_ready(
-        base_url=vllm_router_url, model_name=model_name
+        image_batch=image_chunks[0], client=client, model_name=model_name
     )
     if is_vllm_alive:
         logger.info("Testing dummy batch")
