@@ -14,6 +14,11 @@ if [ -n "$MANUAL_FOLDER" ]; then
   exit 0
 fi
 
+# Get git root directory and cd to it
+GIT_ROOT=$(git rev-parse --show-toplevel)
+cd "$GIT_ROOT"
+echo "Working from git root: $GIT_ROOT"
+
 # First commit → build all folders with Dockerfile
 if [ $(git rev-list --count HEAD) -eq 1 ]; then
   echo "First commit detected - building all Dockerfile folders"
@@ -39,6 +44,12 @@ FILTERED_FOLDERS=""
 for folder in $FOLDERS; do
   # Extract the base folder name (first part of path)
   BASE_FOLDER=$(echo "$folder" | cut -d'/' -f1)
+
+  # Skip if it's "." or ".."
+  if [ "$BASE_FOLDER" = "." ] || [ "$BASE_FOLDER" = ".." ]; then
+    echo "Skipping invalid folder: $BASE_FOLDER"
+    continue
+  fi
 
   # Check if it's in the excluded list
   EXCLUDED=false
