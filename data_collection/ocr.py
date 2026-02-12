@@ -11,11 +11,14 @@ from tenacity import (
 )
 import logging
 from openai import OpenAI
+import requests
+
 
 logger = setup_logger(__name__)
 
 # Configuration matching your vLLM setup
 IMAGES_PER_REQUEST = 5  # matches limit_mm_per_prompt
+MAX_WARMUP_WAIT = 300
 
 
 def encode_image(image_path: str) -> str:
@@ -84,6 +87,91 @@ def ocr_multiple_images(
     return response.choices[0].message.content
 
 
+def wait_for_model_ready(
+    base_url: str,
+    model_name: str,
+    max_wait: int = MAX_WARMUP_WAIT,
+    check_interval: int = 5,
+) -> bool:
+    """
+    Wait for the vLLM model to be ready after cold start.
+
+    Args:
+        base_url: vLLM base URL
+        model_name: Expected model name/ID
+        max_wait: Maximum time to wait in seconds
+        check_interval: Time between checks in seconds
+
+    Returns:
+        True if model is ready, False if timeout
+    """
+    models_endpoint = f"{base_url}/v1/models"
+    start_time = time.time()
+
+    logger.info(f"Waiting for model '{model_name}' to be ready...")
+    logger.info(f"Checking endpoint: {models_endpoint}")
+
+    while (time.time() - start_time) < max_wait:
+        try:
+            response = requests.get(models_endpoint, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                # Check if our model is in the list
+                if "data" in data:
+                    available_models = [m["id"] for m in data.get("data", [])]
+
+                    if model_name in available_models:
+                        elapsed = time.time() - start_time
+                        logger.info(
+                            f"✓ Model '{model_name}' is ready! (took {elapsed:.1f}s)"
+                        )
+                        return True
+                    else:
+                        logger.info(
+                            f"Model not yet available. Found: {available_models}"
+                        )
+                else:
+                    logger.warning(f"Unexpected response format: {data}")
+            else:
+                logger.info(
+                    f"Service not ready (HTTP {response.status_code}). "
+                    f"Pod may still be spinning up..."
+                )
+
+        except requests.exceptions.RequestException as e:
+            logger.info(f"Connection failed: {e}. Waiting for pod to start...")
+
+        # Wait before next check
+        elapsed = time.time() - start_time
+        logger.info(
+            f"Waiting... ({elapsed:.0f}s / {max_wait}s) - "
+            f"next check in {check_interval}s"
+        )
+        time.sleep(check_interval)
+
+    # Timeout
+    logger.error(
+        f"✗ Timeout: Model did not become ready within {max_wait}s. "
+        f"Pod may have failed to start."
+    )
+    return False
+
+
+def check_first_batch(image_batch: list, model_name: str, client: OpenAI):
+    encoded_images = [encode_image(path) for path in image_batch]
+
+    # Send request with multiple images
+    ocr_result = ocr_multiple_images(
+        encoded_images, model_name=model_name, client=client
+    )
+    if len(ocr_result) > 0:
+        return True
+    else:
+        return False
+
+
 def ocr_batch(
     image_paths: list[str],
     images_per_request: int = IMAGES_PER_REQUEST,
@@ -112,10 +200,25 @@ def ocr_batch(
     results = []
     start_time = time.time()
 
+    vllm_router_url = "http://vllm-stack-router-service.zenml.svc.cluster.local/v1"
+    model_name = "/models/Nanonets-OCR2-3B"
     client: OpenAI = OpenAI(
-        base_url="http://vllm-stack-router-service.zenml.svc.cluster.local/v1",
+        base_url=vllm_router_url,
         api_key="dummy",
     )
+
+    is_vllm_alive = wait_for_model_ready(
+        base_url=vllm_router_url, model_name=model_name
+    )
+    if is_vllm_alive:
+        logger.info("Testing dummy batch")
+        is_vllm_ready_for_batching = check_first_batch(
+            image_batch=image_chunks[0],
+            model_name=model_name,
+            client=client,
+        )
+        if not is_vllm_ready_for_batching:
+            raise ValueError(f"Model '{model_name}' is not ready yet. ")
 
     for request_num, chunk_paths in enumerate(image_chunks, 1):
         chunk_start = time.time()
@@ -126,7 +229,7 @@ def ocr_batch(
 
             # Send request with multiple images
             ocr_result = ocr_multiple_images(
-                encoded_images, model_name="nanonets-ocr2-3b", client=client
+                encoded_images, model_name=model_name, client=client
             )
 
             results.append(

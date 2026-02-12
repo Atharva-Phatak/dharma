@@ -18,6 +18,7 @@ def deploy_keda(
             fetch_opts=FetchOpts(
                 repo="https://kedacore.github.io/charts",
             ),
+            values={"http": {"timeout": "30000"}},
             namespace=namespace,
         ),
         opts=pulumi.ResourceOptions(
