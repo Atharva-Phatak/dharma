@@ -160,6 +160,7 @@ def wait_for_model_ready(
 
 
 def check_first_batch(image_batch: list, model_name: str, client: OpenAI):
+    """Method to check if vllm is ready for processing batches."""
     encoded_images = [encode_image(path) for path in image_batch]
 
     # Send request with multiple images
