@@ -11,7 +11,6 @@ from tenacity import (
 )
 import logging
 from openai import OpenAI
-import requests
 
 
 logger = setup_logger(__name__)
@@ -112,19 +111,7 @@ def wait_for_model_ready(
     max_wait: int = MAX_WARMUP_WAIT,
     check_interval: int = 5,
 ) -> bool:
-    """
-    Wait for the vLLM model to be ready after cold start.
-
-    Args:
-        model_name: Expected model name/ID
-        max_wait: Maximum time to wait in seconds
-        check_interval: Time between checks in seconds
-
-    Returns:
-        True if model is ready, False if timeout
-    """
     start_time = time.time()
-
     logger.info(f"Waiting for model '{model_name}' to be ready...")
 
     while (time.time() - start_time) < max_wait:
@@ -134,11 +121,15 @@ def wait_for_model_ready(
                 model_name=model_name,
                 client=client,
             )
-            if not is_up:
+            if is_up:
+                elapsed = time.time() - start_time
+                logger.info(f"✓ Model '{model_name}' is ready! (took {elapsed:.1f}s)")
+                return True  # ← FIX #1
+            else:
                 logger.warning(f"{model_name} is not up yet")
 
-        except requests.exceptions.RequestException as e:
-            logger.info(f"Connection failed: {e}. Waiting for pod to start...")
+        except Exception as e:  # ← FIX #2: Catch all exceptions during warmup
+            logger.info(f"Model not ready: {e}. Waiting for pod to start...")
 
         # Wait before next check
         elapsed = time.time() - start_time
