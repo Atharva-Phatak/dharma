@@ -26,8 +26,8 @@ jobs:
 
       - id: detect
         run: |
-          chmod +x ./scripts/detect-changes.sh
-          ./scripts/detect-changes.sh "${{ github.event.inputs.folder }}"
+          chmod +x scripts/detect-changes.sh
+          scripts/detect-changes.sh "${{ github.event.inputs.folder }}"
 
   build:
     needs: detect-changes
