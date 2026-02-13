@@ -62,35 +62,34 @@ def deploy_vllm(provider: k8s.Provider, namespace: str):
                                     "48000",
                                 ],
                             },
-                            "keda": {"enabled": False},
-                            # "keda": {
-                            #     "enabled": True,
-                            #     "minReplicaCount": 0,  # Allow scaling to zero
-                            #     "maxReplicaCount": 1,
-                            #     "idleReplicaCount": 0,
-                            #     "triggers": [
-                            #         # Queue-based scaling
-                            #         {
-                            #             "type": "prometheus",
-                            #             "metadata": {
-                            #                 "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
-                            #                 "metricName": "vllm:num_requests_waiting",
-                            #                 "query": "vllm:num_requests_waiting",
-                            #                 "threshold": "5",
-                            #             },
-                            #         },
-                            #         # Traffic-based keepalive (prevents scale-to-zero when traffic exists)
-                            #         {
-                            #             "type": "prometheus",
-                            #             "metadata": {
-                            #                 "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
-                            #                 "metricName": "vllm:incoming_keepalive",
-                            #                 "query": "sum(rate(vllm:num_incoming_requests_total[1m]) > bool 0)",
-                            #                 "threshold": "1",
-                            #             },
-                            #         },
-                            #     ],
-                            # },
+                            "keda": {
+                                "enabled": True,
+                                "minReplicaCount": 0,  # Allow scaling to zero
+                                "maxReplicaCount": 1,
+                                "idleReplicaCount": 0,
+                                "triggers": [
+                                    # Queue-based scaling
+                                    {
+                                        "type": "prometheus",
+                                        "metadata": {
+                                            "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
+                                            "metricName": "vllm:num_requests_waiting",
+                                            "query": "vllm:num_requests_waiting",
+                                            "threshold": "5",
+                                        },
+                                    },
+                                    # Traffic-based keepalive (prevents scale-to-zero when traffic exists)
+                                    {
+                                        "type": "prometheus",
+                                        "metadata": {
+                                            "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
+                                            "metricName": "vllm:incoming_keepalive",
+                                            "query": "sum(rate(vllm:num_incoming_requests_total[1m]) > bool 0)",
+                                            "threshold": "1",
+                                        },
+                                    },
+                                ],
+                            },
                             # 🔌 Attach existing PVC
                             "extraVolumes": [
                                 {
