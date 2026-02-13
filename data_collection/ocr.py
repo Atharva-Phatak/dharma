@@ -16,7 +16,7 @@ from openai import OpenAI
 logger = setup_logger(__name__)
 
 # Configuration matching your vLLM setup
-IMAGES_PER_REQUEST = 3  # matches limit_mm_per_prompt
+IMAGES_PER_REQUEST = 4  # matches limit_mm_per_prompt
 MAX_WARMUP_WAIT = 600
 
 

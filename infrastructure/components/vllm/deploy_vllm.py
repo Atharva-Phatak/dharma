@@ -40,7 +40,7 @@ def deploy_vllm(provider: k8s.Provider, namespace: str):
                                 "model": "nanonets-ocr2-3b",
                             },
                             "repository": "vllm/vllm-openai",
-                            "tag": "v0.10.0",
+                            "tag": "v0.9.2",
                             "modelURL": "/models/Nanonets-OCR2-3B",
                             "replicaCount": 1,
                             "requestCPU": 10,
@@ -50,46 +50,47 @@ def deploy_vllm(provider: k8s.Provider, namespace: str):
                             "vllmConfig": {
                                 "v0": "1",
                                 "dtype": "bfloat16",
-                                "maxNumSeqs": 10,
+                                "maxNumSeqs": 5,
                                 # OCR doesn't need huge context
-                                "gpu_memory_utilization": 0.85,
+                                "gpu_memory_utilization": 0.95,
                                 "extraArgs": [
                                     "--mm-processor-kwargs",
                                     '{"min_pixels": 784, "max_pixels": 4096000}',
                                     "--limit_mm_per_prompt",
                                     '{"image": 5, "video": 0}',
                                     "--max-model-len",
-                                    "16000",
+                                    "48000",
                                 ],
                             },
-                            "keda": {
-                                "enabled": True,
-                                "minReplicaCount": 0,  # Allow scaling to zero
-                                "maxReplicaCount": 1,
-                                "idleReplicaCount": 0,
-                                "triggers": [
-                                    # Queue-based scaling
-                                    {
-                                        "type": "prometheus",
-                                        "metadata": {
-                                            "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
-                                            "metricName": "vllm:num_requests_waiting",
-                                            "query": "vllm:num_requests_waiting",
-                                            "threshold": "5",
-                                        },
-                                    },
-                                    # Traffic-based keepalive (prevents scale-to-zero when traffic exists)
-                                    {
-                                        "type": "prometheus",
-                                        "metadata": {
-                                            "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
-                                            "metricName": "vllm:incoming_keepalive",
-                                            "query": "sum(rate(vllm:num_incoming_requests_total[1m]) > bool 0)",
-                                            "threshold": "1",
-                                        },
-                                    },
-                                ],
-                            },
+                            "keda": {"enabled": False},
+                            # "keda": {
+                            #     "enabled": True,
+                            #     "minReplicaCount": 0,  # Allow scaling to zero
+                            #     "maxReplicaCount": 1,
+                            #     "idleReplicaCount": 0,
+                            #     "triggers": [
+                            #         # Queue-based scaling
+                            #         {
+                            #             "type": "prometheus",
+                            #             "metadata": {
+                            #                 "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
+                            #                 "metricName": "vllm:num_requests_waiting",
+                            #                 "query": "vllm:num_requests_waiting",
+                            #                 "threshold": "5",
+                            #             },
+                            #         },
+                            #         # Traffic-based keepalive (prevents scale-to-zero when traffic exists)
+                            #         {
+                            #             "type": "prometheus",
+                            #             "metadata": {
+                            #                 "serverAddress": "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090",
+                            #                 "metricName": "vllm:incoming_keepalive",
+                            #                 "query": "sum(rate(vllm:num_incoming_requests_total[1m]) > bool 0)",
+                            #                 "threshold": "1",
+                            #             },
+                            #         },
+                            #     ],
+                            # },
                             # 🔌 Attach existing PVC
                             "extraVolumes": [
                                 {
