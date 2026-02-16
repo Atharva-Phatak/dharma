@@ -7,8 +7,8 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Atharva-Phatak/dharma
-    targetRevision: migrate_to_argo
-    path: gitops/platform
+    targetRevision: Atharva-Phatak/migrate_to_argo
+    path: infrastructure/gitops/platform
     directory:
       recurse: true
   destination:
@@ -18,3 +18,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true  # Add this - retries if CRD missing
+    retry:  # Add retry logic
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
