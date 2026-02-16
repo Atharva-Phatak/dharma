@@ -15,12 +15,12 @@ namespace_name = pconfig.require("namespace")
 
 
 external_secret_namespace = create_namespace(
-    provider=provider, namespace="external-secret"
+    provider=provider, namespace="external-secrets"
 )
 
 _ = create_k8s_infiscal_secret_token(
     k8s_provider=provider,
-    namespace="external-secret",
+    namespace="external-secrets",
     depends_on=[external_secret_namespace],
 )
 
