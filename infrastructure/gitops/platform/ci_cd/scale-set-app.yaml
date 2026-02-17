@@ -9,11 +9,11 @@ spec:
   project: default
   source:
     chart: gha-runner-scale-set
-    repoURL: oci://ghcr.io/actions/actions-runner-controller-charts
-    targetRevision: 0.13.1  # Check for latest version
+    repoURL: oci://ghcr.io/actions
+    targetRevision: 0.13.1
     helm:
       values: |
-        githubConfigUrl: https://github.com/Atharva-Phatak/dharma  # Update with your repo
+        githubConfigUrl: https://github.com/Atharva-Phatak/dharma
         githubConfigSecret: gha-rs-github-secret
         containerMode:
           type: dind
