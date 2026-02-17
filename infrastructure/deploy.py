@@ -56,10 +56,10 @@ def deploy_sequentially():
     zenml_namespace_name = outputs["namespace"].value
     print(f"✅ Cluster and namespace deployed: {zenml_namespace_name}")
     # Deploy arc runner
-    _ = deploy_stack(
-        name="arc_runner",
-        path=Path(infra_base_path) / "7_arc_runner",
-    )
+    # _ = deploy_stack(
+    #    name="arc_runner",
+    #    path=Path(infra_base_path) / "7_arc_runner",
+    # )
 
     _ = deploy_stack(
         name="argocd",
