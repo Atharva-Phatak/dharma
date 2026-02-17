@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: arc-scale-set
-  namespace: arc-ns
+  namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "17"
 spec:
