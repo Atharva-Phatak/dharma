@@ -335,8 +335,8 @@ def create_k8s_infiscal_secret_token(
     depends_on: list,
     k8s_provider: k8s.Provider,
 ):
-    infiscal_token = os.getenv("INFISCAL_SECRET")
-    infiscal_client_id = os.getenv("INFISCAL_CLIENT_ID")
+    infiscal_token = os.getenv("INFISICAL_SECRET")
+    infiscal_client_id = os.getenv("INFISICAL_CLIENT_ID")
     inf_secret = k8s.core.v1.Secret(
         "universal-auth-credentials",
         metadata={
