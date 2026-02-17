@@ -8,9 +8,10 @@ metadata:
 spec:
   project: default
   source:
-    chart: gha-runner-scale-set
-    repoURL: oci://ghcr.io/actions
-    targetRevision: 0.13.1
+    source:
+      repoURL: oci://ghcr.io/actions/actions-runner-controller-charts
+      chart: gha-runner-scale-set
+      targetRevision: 0.13.1
     helm:
       values: |
         githubConfigUrl: https://github.com/Atharva-Phatak/dharma
