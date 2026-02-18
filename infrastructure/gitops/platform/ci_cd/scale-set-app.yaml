@@ -8,11 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    source:
-      repoURL: oci://ghcr.io/actions/actions-runner-controller-charts
-      chart: gha-runner-scale-set
-      targetRevision: 0.12.1
+    repoURL: oci://ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.12.1
     helm:
+      enableOCI: true
       values: |
         githubConfigUrl: https://github.com/Atharva-Phatak/dharma
         githubConfigSecret: gha-rs-github-secret
