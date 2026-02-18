@@ -1,0 +1,3 @@
+name: argocd
+runtime: python
+description: Pulumi program to deploy ArgoCD

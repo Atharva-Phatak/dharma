@@ -56,63 +56,68 @@ def deploy_sequentially():
     zenml_namespace_name = outputs["namespace"].value
     print(f"✅ Cluster and namespace deployed: {zenml_namespace_name}")
     # Deploy arc runner
-    _ = deploy_stack(
-        name="arc_runner",
-        path=Path(infra_base_path) / "7_arc_runner",
-    )
-    # Deploy minio
-    _ = deploy_stack(
-        name="minio",
-        path=Path(infra_base_path) / "4_minio",
-        config={"namespace": zenml_namespace_name},
-    )
-    # Deploy postgres
-    _ = deploy_stack(
-        name="sql",
-        path=Path(infra_base_path) / "5_sql",
-        config={"namespace": zenml_namespace_name},
-    )
-    print("✅ MinIO and SQL deployed.")
-    # Deploy orchestrator
-    _ = deploy_stack(
-        name="orchestrator",
-        path=Path(infra_base_path) / "6_orchestrator",
-        config={"namespace": zenml_namespace_name},
-    )
-    print("✅ Orchestrator deployed.")
-    # Deploy persistent volume claims
-    _ = deploy_stack(
-        name="persistent_claims",
-        path=Path(infra_base_path) / "12_persistent_claims",
-        config={"namespace": zenml_namespace_name},
-    )
+    # _ = deploy_stack(
+    #    name="arc_runner",
+    #    path=Path(infra_base_path) / "7_arc_runner",
+    # )
 
-    # deploy kube-prometheus-stack
     _ = deploy_stack(
-        name="kube_prom_stack",
-        path=Path(infra_base_path) / "8_kube_prom_stack",
+        name="argocd",
+        path=Path(infra_base_path) / "2_argocd",
     )
-
-    deploy_stack(
-        name="keda",
-        path=Path(infra_base_path) / "9_keda",
-    )
-    print("✅ KEDA deployed.")
-
+    # # Deploy minio
+    # _ = deploy_stack(
+    #     name="minio",
+    #     path=Path(infra_base_path) / "4_minio",
+    #     config={"namespace": zenml_namespace_name},
+    # )
+    # # Deploy postgres
+    # _ = deploy_stack(
+    #     name="sql",
+    #     path=Path(infra_base_path) / "5_sql",
+    #     config={"namespace": zenml_namespace_name},
+    # )
+    # print("✅ MinIO and SQL deployed.")
+    # # Deploy orchestrator
+    # _ = deploy_stack(
+    #     name="orchestrator",
+    #     path=Path(infra_base_path) / "6_orchestrator",
+    #     config={"namespace": zenml_namespace_name},
+    # )
+    # print("✅ Orchestrator deployed.")
+    # # Deploy persistent volume claims
+    # _ = deploy_stack(
+    #     name="persistent_claims",
+    #     path=Path(infra_base_path) / "12_persistent_claims",
+    #     config={"namespace": zenml_namespace_name},
+    # )
+    #
+    # # deploy kube-prometheus-stack
+    # _ = deploy_stack(
+    #     name="kube_prom_stack",
+    #     path=Path(infra_base_path) / "8_kube_prom_stack",
+    # )
+    #
+    # deploy_stack(
+    #     name="keda",
+    #     path=Path(infra_base_path) / "9_keda",
+    # )
+    # print("✅ KEDA deployed.")
+    #
     deploy_stack(
         name="additional_secrets",
         path=Path(infra_base_path) / "16_additional_secrets",
         config={"namespace": zenml_namespace_name},
     )
-    print("✅ Observability stack deployed.")
-    deploy_stack(
-        name="vllm",
-        path=Path(infra_base_path) / "15_vllm",
-        config={
-            "namespace": zenml_namespace_name,
-        },
-    )
-    print("✅ VLLM deployed.")
+    # print("✅ Observability stack deployed.")
+    # deploy_stack(
+    #     name="vllm",
+    #     path=Path(infra_base_path) / "15_vllm",
+    #     config={
+    #         "namespace": zenml_namespace_name,
+    #     },
+    # )
+    # print("✅ VLLM deployed.")
 
     print("Cleaning up downloaded charts...")
     charts_path = Path(infra_base_path) / "11_annotator/charts"

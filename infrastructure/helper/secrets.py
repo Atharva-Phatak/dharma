@@ -328,3 +328,24 @@ def create_grafana_secret(
         opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
     )
     return grafana_secret
+
+
+def create_k8s_infiscal_secret_token(
+    namespace: str,
+    depends_on: list,
+    k8s_provider: k8s.Provider,
+):
+    infiscal_token = os.getenv("INFISICAL_SECRET")
+    infiscal_client_id = os.getenv("INFISICAL_CLIENT_ID")
+    inf_secret = k8s.core.v1.Secret(
+        "universal-auth-credentials",
+        metadata={
+            "name": "universal-auth-credentials",
+            "namespace": namespace,
+        },
+        string_data={"clientId": infiscal_client_id, "clientSecret": infiscal_token},
+        opts=pulumi.ResourceOptions(
+            provider=k8s_provider, depends_on=depends_on if depends_on else []
+        ),
+    )
+    return inf_secret

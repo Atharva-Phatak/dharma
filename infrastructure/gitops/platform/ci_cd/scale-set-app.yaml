@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dharma-scale-set
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "17"
+spec:
+  project: default
+  source:
+    repoURL: oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+    chart: gha-runner-scale-set
+    targetRevision: 0.13.1
+    helm:
+      enableOCI: true
+      skipCrds: false
+      values: |
+        githubConfigUrl: https://github.com/Atharva-Phatak/dharma
+        githubConfigSecret: gha-rs-github-secret
+        containerMode:
+          type: dind
+        controllerServiceAccount:
+          namespace: arc-ns
+          name: arc-gha-rs-controller
+        template:
+          spec:
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:latest
+                command: ["/home/runner/run.sh"]
+        minRunners: 1
+        maxRunners: 2
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-ns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
