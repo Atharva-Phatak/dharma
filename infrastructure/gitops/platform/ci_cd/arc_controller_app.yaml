@@ -13,6 +13,7 @@ spec:
     targetRevision: 0.13.1
     helm:
       enableOCI: true
+      skipCrds: false
   destination:
     server: https://kubernetes.default.svc
     namespace: arc-ns
@@ -27,4 +28,4 @@ spec:
       backoff:
         duration: 5s
         factor: 2
-        maxDuration: 3m
+        maxDuration: 5m
